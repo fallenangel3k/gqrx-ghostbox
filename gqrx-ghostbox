@@ -114,6 +114,68 @@ sub start {
     	}
     }
 
+    sub set_frequency_random
+    {
+    	my $self = shift;
+
+    	my $frequency_width = $options->{max_frequency} - $options->{min_frequency};
+    	my $random_freq = int(rand($frequency_width)) + $options->{min_frequency});
+
+$self->set_frequency($random_freq);
+}
+
+sub frequency_step_backward
+{
+	my $self = shift;
+	my ($scanning_step, $min_frequency, $max_frequency, $bounce, $frequency)  = ($options->{scanning_step}, $options->{min_frequency}, $options->{max_frequency}, $options->{bounce}, $self->{frequency});
+
+	my $new_frequency = $frequency - $scanning_step;
+	if ($new_frequency < $min_frequency) {
+		if ($bounce) {
+			$options->{scanning_mode} = 'FORWARD';
+			$self->next_frequency();
+		}
+		else {
+			$new_frequency = $new_frequency + $max_frequency - $min_frequency;
+		}
+	}
+
+	$self->set_frequency( $new_frequency );
+}
+
+
+sub frequency_step_forward
+{
+	my $self = shift;
+	my ($scanning_step, $min_frequency, $max_frequency, $bounce, $frequency)  = ($options->{scanning_step}, $options->{min_frequency}, $options->{max_frequency}, $options->{bounce}, $self->{frequency});
+
+	my $new_frequency = $frequency + $scanning_step;
+
+	if ($new_frequency > $max_frequency) {
+		if ($bounce) {
+			$options->{scanning_mode} = 'BACKWARD';
+			$self->next_frequency();
+		}
+		else {
+			$new_frequency = $new_frequency - $max_frequency + $min_frequency ;
+		}
+	}
+
+	$self->set_frequency( $new_frequency );
+}
+
+
+sub set_frequency
+{
+	my $self = shift;
+	my $new_freq = shift;
+
+	$self->{frequency} = $new_freq;
+
+	if (! $self->{remote}->set_frequency($new_freq)) {
+		die "ERROR: set_frequency() failed: " . $self->{remote}->error() . "\n";
+	}
+}
 
     ################################################################################
     # Scanning
@@ -122,43 +184,23 @@ sub start {
     sub next_frequency {
     	my ($self) = @_;
     	my $options = $self->{options};
+    	my $scanning_mode = $options->{scanning_mode};
 
-    	if ($options->{scanning_mode} eq 'RANDOM') {
-    		$self->{frequency} = int(rand($options->{max_frequency} - $options->{min_frequency}) +
-    			$options->{min_frequency});
+    	if ($scanning_mode eq 'RANDOM') {
+    		$self->set_frequency_random();
     	}
-    	elsif ($options->{scanning_mode} eq 'BACKWARD') {
-    		$self->{frequency} = $self->{frequency} - $options->{scanning_step};
-
-    		if ($self->{frequency} < $options->{min_frequency}) {
-    			if ($options->{bounce}) {
-    				$options->{scanning_mode} = 'FORWARD';
-    				$self->next_frequency();
-    			}
-    			else {
-    				$self->{frequency} = $self->{frequency} + $options->{max_frequency} -
-    				$options->{min_frequency};
-    			}
-    		}
+    	elsif ($scanning_mode eq 'BACKWARD') {
+    		$self->frequency_step_backward();
     	}
-		else { # Default is forward
-			$self->{frequency} = $self->{frequency} + $options->{scanning_step};
-
-			if ($self->{frequency} > $options->{max_frequency}) {
-				if ($options->{bounce}) {
-					$options->{scanning_mode} = 'BACKWARD';
-					$self->next_frequency();
-				}
-				else {
-					$self->{frequency} = $self->{frequency} - $options->{max_frequency} +
-					$options->{min_frequency};
-				}
-			}
+		else { # Default is 
+			$self->frequency_step_forward();
 		}
+	}
 
-		if (! $self->{remote}->set_frequency($self->{frequency})) {
-			die "ERROR: set_frequency() failed: " . $self->{remote}->error() . "\n";
-		}
+	sub generate_new_frequency
+	{
+		my ($self) = @_;
+		my $options = $self->{options};
 	}
 
 
