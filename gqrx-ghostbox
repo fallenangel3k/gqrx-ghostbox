@@ -98,24 +98,24 @@ sub start {
 }
 
 
-    ################################################################################
-    # Networking
-    ################################################################################
+################################################################################
+# Networking
+################################################################################
 
-    sub connect_to_gqrx {
-    	my ($self) = @_;
+sub connect_to_gqrx {
+	my ($self) = @_;
 
-    	$self->{remote} = GQRX::Remote->new();
+	$self->{remote} = GQRX::Remote->new();
 
-    	if (! $self->{remote}->connect(host => $self->{options}->{gqrx_host},
-    		port => $self->{options}->{gqrx_port})) {
-    		die "ERROR: Failed to establish connection to Gqrx " .
-    		"at $self->{options}->{gqrx_host}:$self->{options}->{gqrx_port}\n";
-    	}
-    }
+	if (! $self->{remote}->connect(host => $self->{options}->{gqrx_host},
+		port => $self->{options}->{gqrx_port})) {
+		die "ERROR: Failed to establish connection to Gqrx " .
+		"at $self->{options}->{gqrx_host}:$self->{options}->{gqrx_port}\n";
+	}
+}
 
-    sub set_frequency_random
-    {
+sub set_frequency_random
+{
     	my $self = shift;
 
     	my $frequency_width = $options->{max_frequency} - $options->{min_frequency};
