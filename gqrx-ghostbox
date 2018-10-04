@@ -116,12 +116,12 @@ sub connect_to_gqrx {
 
 sub set_frequency_random
 {
-    	my $self = shift;
+	my $self = shift;
 
-    	my $frequency_width = $options->{max_frequency} - $options->{min_frequency};
-    	my $random_freq = int(rand($frequency_width)) + $options->{min_frequency});
+	my $frequency_width = $options->{max_frequency} - $options->{min_frequency};
+	my $random_freq = int(rand($frequency_width)) + $options->{min_frequency});
 
-$self->set_frequency($random_freq);
+	$self->set_frequency($random_freq);
 }
 
 sub frequency_step_backward
