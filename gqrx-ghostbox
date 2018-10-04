@@ -141,25 +141,25 @@ sub start {
     			}
     		}
     	}
-	else { # Default is forward
-		$self->{frequency} = $self->{frequency} + $options->{scanning_step};
+		else { # Default is forward
+			$self->{frequency} = $self->{frequency} + $options->{scanning_step};
 
-		if ($self->{frequency} > $options->{max_frequency}) {
-			if ($options->{bounce}) {
-				$options->{scanning_mode} = 'BACKWARD';
-				$self->next_frequency();
-			}
-			else {
-				$self->{frequency} = $self->{frequency} - $options->{max_frequency} +
-				$options->{min_frequency};
+			if ($self->{frequency} > $options->{max_frequency}) {
+				if ($options->{bounce}) {
+					$options->{scanning_mode} = 'BACKWARD';
+					$self->next_frequency();
+				}
+				else {
+					$self->{frequency} = $self->{frequency} - $options->{max_frequency} +
+					$options->{min_frequency};
+				}
 			}
 		}
-	}
 
-	if (! $self->{remote}->set_frequency($self->{frequency})) {
-		die "ERROR: set_frequency() failed: " . $self->{remote}->error() . "\n";
+		if (! $self->{remote}->set_frequency($self->{frequency})) {
+			die "ERROR: set_frequency() failed: " . $self->{remote}->error() . "\n";
+		}
 	}
-}
 
 
     ################################################################################
