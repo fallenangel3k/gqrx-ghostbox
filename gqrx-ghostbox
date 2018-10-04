@@ -177,38 +177,38 @@ sub set_frequency
 	}
 }
 
-    ################################################################################
-    # Scanning
-    ################################################################################
+################################################################################
+# Scanning
+################################################################################
 
-    sub next_frequency {
-    	my ($self) = @_;
-    	my $options = $self->{options};
-    	my $scanning_mode = $options->{scanning_mode};
+sub next_frequency {
+	my ($self) = @_;
+	my $options = $self->{options};
+	my $scanning_mode = $options->{scanning_mode};
 
-    	if ($scanning_mode eq 'RANDOM') {
-    		$self->set_frequency_random();
-    	}
-    	elsif ($scanning_mode eq 'BACKWARD') {
-    		$self->frequency_step_backward();
-    	}
-		else { # Default is 
-			$self->frequency_step_forward();
-		}
+	if ($scanning_mode eq 'RANDOM') {
+		$self->set_frequency_random();
 	}
-
-	sub generate_new_frequency
-	{
-		my ($self) = @_;
-		my $options = $self->{options};
+	elsif ($scanning_mode eq 'BACKWARD') {
+		$self->frequency_step_backward();
 	}
+	else { # Default is 
+		$self->frequency_step_forward();
+	}
+}
+
+sub generate_new_frequency
+{
+	my ($self) = @_;
+	my $options = $self->{options};
+}
 
 
     ################################################################################
     # Command line parsing
     ################################################################################
 
-    sub show_usage {
+sub show_usage {
 	# Show the usage help message
 	# This accepts an optional $error_message string.  If defined,
 	# this is printed before the help as an error message and the exit
