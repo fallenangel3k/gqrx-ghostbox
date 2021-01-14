@@ -107,7 +107,7 @@ use GQRX::Remote;
     print "\nSETTING FREQUENCY: $self->{frequency}\n";
     }
 
-	# Michael & Marcus MOD 
+    #### Michael & Marcus MOD ####
         if ($self->{options}->{randsleep}) {
 		my $range = $self->{options}->{randsleep};
 		my $random_number = int(rand($range));
@@ -168,6 +168,11 @@ sub next_frequency {
 	my ($self) = @_;
 	my $options = $self->{options};
 	my $scanning_mode = $options->{scanning_mode};
+	my $follow = $options->{followscan};
+
+	if ($follow) {
+		$self->check_follow();
+	}
 
 	if ($scanning_mode eq 'RANDOM') {
 		$self->set_frequency_random();
@@ -199,7 +204,26 @@ sub generate_new_frequency
 }
 
 
-#### Marcus & Michael MOD
+
+
+#### Marcus & Michael MOD ###
+
+sub check_follow
+{
+	my $self = shift;
+	my $options = $self->{options};	
+	my $chance = rand() * 100;
+	if ($chance < ($self->{options}->{followscan})) {
+		$options->{scanning_mode} = rand() > 0.5 ? 'FORWARD' : 'BACKWARD';
+		print "FOLLOWING: $self->{options}->{scanning_mode}\n";	
+	}
+	else {
+		$options->{scanning_mode} = $self->{options}->{ori_mode};
+		print "MODE: $self->{options}->{scanning_mode}\n";	
+	}
+}
+
+
 sub set_frequency_quantumrandom3
 {
 	my $self = shift;
@@ -210,8 +234,6 @@ sub set_frequency_quantumrandom3
 	my $myquantumfreq = $mycontent[12];
 	my $myquantumfreqprint = $myquantumfreq / 1000 / 1000;
 	print "QUANTUMFREQUENCY: $myquantumfreqprint MHz";
-	#  $self->{frequency} = int(rand($options->{max_frequency} - $options->{min_frequency}) + $options->{min_frequency});
-	#  $self->{frequency} = $myquantumfreq;
 	$self->set_frequency($myquantumfreq);
 }
 
@@ -228,7 +250,6 @@ sub set_frequency_quantumrandom2
 	my $number = $rand->get();  # get numbers
 	my $myquantumfreqprint = $number / 1000 / 1000;
 	print "QUANTUMFREQUENCY: $myquantumfreqprint MHz";
-	#  $self->{frequency} = $number;
 	$self->set_frequency($number);
 }
 	
@@ -245,7 +266,6 @@ sub set_frequency_quantumrandom1
 	my $number = $rand->get();  # get numbers
 	my $myquantumfreqprint = $number / 1000 / 1000;
 	print "QUANTUMFREQUENCY: $myquantumfreqprint MHz";
-	#  $self->{frequency} = $number;
 	$self->set_frequency($number);
 }
 
@@ -346,7 +366,7 @@ Usage: gqrx-ghostbox [OPTIONS]
     --max, --max-frequency={FREQUENCY}  Maximum frequency to scan in KHz
                                         (default is '107700', FM max)
    
-    -f, --follow={0|1}			Chance to determine if we want to follow along the scan
+    -f, --follow={PERCENT}		Chance to determine if we want to follow along the scan
 
     -b, --bounce={0|1}			Option to tell if we want to bounce at the ends of the spectrum
 
@@ -428,6 +448,7 @@ EOF
 	$options->{sleep_time} *= 1000;
 	$options->{randsleep} *= 1000;
 	$options->{ghostmode} *= 1000;
+	$options->{ori_mode} = 	$self->{options}->{scanning_mode};
 
 	# If bounce is enabled, pick a starting direction
 	if ($options->{scanning_mode} eq 'BOUNCE') {
@@ -467,7 +488,7 @@ EOF
 		  "port|P=s"             => \$options{gqrx_port},
 		  "quiet|q"              => \$options{quiet_mode},
 		  "bounce|b"		 => \$options{bounce},
-		  "follow|f"		 => \$options{followscan},
+		  "follow|f=f"		 => \$options{followscan},
 		  "scanning-mode|m=s"    => \$options{scanning_mode},
 		  "scanning-step|s=f"    => \$options{scanning_step},
 		  "sleep-time|S=f"       => \$options{sleep_time},
