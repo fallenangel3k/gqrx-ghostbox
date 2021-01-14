@@ -200,7 +200,7 @@ sub set_frequency_quantumrandom1
 {
 	my $self = shift;
         my $options = $self->{options};
-	my $url = "http://random.openqu.org/api/randint?size=1&min=$options->{min_frequency}&max=$options->{max_frequency}";
+	my $url = "http://qrng.ethz.ch/api/randint?size=1&min=$options->{min_frequency}&max=$options->{max_frequency}";
 	my $content = get($url);  
 	my @mycontent = split /[{["result": }\]]/, $content;  # original response from JSON API was for e.g. --> {"result": [96245783]}
 	my $myquantumfreq = $mycontent[12];
