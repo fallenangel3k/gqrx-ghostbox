@@ -1,9 +1,8 @@
 #!/usr/bin/env perl
 
-
 ################################################################################
 # gqrx-ghostbox -  Utility for EVP/ghost box style radio scanning with GQRX
-# Copyright (c) 2016, Douglas Haber
+# Copyright (c) 2021, Douglas Haber, brecolbrecol, fallenangel3k
 # All rights reserved
 ################################################################################
 # For more information about this program and its usage, or to find the
@@ -68,12 +67,7 @@ use GQRX::Remote;
     	my $self = {
 	    remote    => undef,  # GQRX::Remote object
 	    options   => undef,  # Runtime options
-	    frequency => undef,  # The current scanning frequency
-	    randsleep => undef,  # random additional sleep time
-	    ghostmode => undef,  # random additional sleep time from ghost/random
-	    ghostchance => undef, # value above GHOST/random will trigger additional delay
-	    quantumrandom => undef, # true quantum random number
-	    mysquelch => undef   # value for squelch
+	    frequency => undef   # The current scanning frequency
 	};
 	bless ($self, $class);
 	$self->parse_command_line_options();
@@ -83,6 +77,14 @@ use GQRX::Remote;
 
     sub start {
     my ($self) = @_;
+
+	print "\n\n\n######### PARA-GERMANIA #########\n";		
+	print "# Welcome to the GQRX-Ghostbox! #\n"; 
+	print "# Modified by Michael & Marcus. #\n";
+	print "#         January 2021          #\n";
+	print "# CAUTION: Use at own risk!     #\n";
+	print "#################################\n\n\n";
+	
 	$self->connect_to_gqrx();
 
 	# Setup a random starting frequency within the range
@@ -91,38 +93,40 @@ use GQRX::Remote;
 
 	# Set the default demodulator mode and squelch
 	$self->{remote}->set_demodulator_mode($self->{options}->{demodulator_mode});
-	#$self->{remote}->set_squelch_threshold(-42.0);
-	#$self->{remote}->set_squelch_threshold(-33.0);
 	$self->{remote}->set_squelch_threshold(($self->{options}->{mysquelch}));
-	print "\nHAUPTSQUELCH: $self->{options}->{mysquelch}\n\n";
+	print "MODE: $self->{options}->{scanning_mode}\n";
+	print "DEMODULATOR SET: $self->{options}->{demodulator_mode}\n";
+	print "SQUELCH SET: $self->{options}->{mysquelch}\n\n";
+
+	print "STARTING THE GHOSTBOX NOW!\n\n";
 
     while (1) {
     $self->next_frequency();
 
     if (! $self->{options}->{quiet_mode}) {
-    print "\nSetting frequency: $self->{frequency}\n\n";
+    print "\nSETTING FREQUENCY: $self->{frequency}\n";
     }
 
 	# Michael & Marcus MOD 
         if ($self->{options}->{randsleep}) {
-	my $range = $self->{options}->{randsleep};
-	my $random_number = int(rand($range));
-    	my $rnhum = $random_number / 1000 / 1000;
-	print "Random Sleeptime: $rnhum sec.\n";
-	usleep($random_number);
+		my $range = $self->{options}->{randsleep};
+		my $random_number = int(rand($range));
+    		my $rnhum = $random_number / 1000000;
+		print "RANDOM SLEEPTIME: $rnhum sec.\n";
+		usleep($random_number);
         }
 
 	my $ghost = rand() * 100;
 	if ($ghost < ($self->{options}->{ghostchance})) {
-	my $ghrange = $self->{options}->{ghostmode};
-	my $ghrandom_number = int(rand($ghrange));
-    	my $ghrnhum = $ghrandom_number / 1000 / 1000;
-	print "Random GHOST-Sleeptime: $ghrnhum SEC.\n";
-	usleep($ghrandom_number);
+		my $ghrange = $self->{options}->{ghostmode};
+		my $ghrandom_number = int(rand($ghrange));
+    		my $ghrnhum = $ghrandom_number / 1000000;
+		print "RANDOM GHOST-TIME: $ghrnhum SEC.\n";
+		usleep($ghrandom_number);
 	}
     
-	my $stdsleep = ($self->{options}->{sleep_time}) / 1000 / 1000;
-	print "Sleeptime: $stdsleep SEC.\n";	
+	my $stdsleep = ($self->{options}->{sleep_time}) / 1000000;
+	print "SLEEPTIME: $stdsleep SEC.\n";	
         usleep($self->{options}->{sleep_time});
     }
 	
@@ -196,7 +200,7 @@ sub generate_new_frequency
 
 
 #### Marcus & Michael MOD
-sub set_frequency_quantumrandom1
+sub set_frequency_quantumrandom3
 {
 	my $self = shift;
         my $options = $self->{options};
@@ -228,8 +232,7 @@ sub set_frequency_quantumrandom2
 	$self->set_frequency($number);
 }
 	
-
-sub set_frequency_quantumrandom3
+sub set_frequency_quantumrandom1
 {
 	my $self = shift;
         my $options = $self->{options};
@@ -344,6 +347,10 @@ Usage: gqrx-ghostbox [OPTIONS]
 
     --max, --max-frequency={FREQUENCY}  Maximum frequency to scan in KHz
                                         (default is '107700', FM max)
+   
+    -f, --follow={0|1}			Chance to determine if we want to follow along the scan
+
+    -b, --bounce={0|1}			Option to tell if we want to bounce at the ends of the spectrum
 
     -m, --scanning-mode={MODE}          Method of scanning
                                         Options: forward, backward, bounce, random, random2
@@ -357,17 +364,17 @@ Usage: gqrx-ghostbox [OPTIONS]
     -S, --sleep={TIME}			Time to hold a frequency for each in ms. 
 					(default is '13')
 
-    -R, --randsleep={TIME}		NEW: maximum additional random sleep time in ms 
+    -R, --randsleep={TIME}		NEW: Maximum additional random sleep time in ms 
 					(default is '0')
 					
-    -G, --ghostmode={TIME}		NEW: maximum additional random sleep time in ms which is enabled 
+    -G, --ghostmode={TIME}		NEW: Maximum additional random sleep time in ms which is enabled 
 					by ghost/randomly by xx% as per -X/--ghostchance
 					(default is '0')
 					
-    -X, --ghostchance={PERCENT}		NEW: percent above which GHOST/random is enabled
+    -X, --ghostchance={PERCENT}		NEW: Percent above which GHOST/random is enabled
 					(default is '0')
 					
-    -n, --squelch={mysquelch}		Treshold-Level for Squelch (more turns on sooner). 
+    -n, --squelch={mysquelch}		NEW: Treshold-Level for Squelch (more turns on sooner). 
 					(default is '66')
 					
 
@@ -436,6 +443,7 @@ EOF
 	my ($self) = @_;
 	my %options = (
 	    bounce => 0,                 # Oscillate the scanning mode when true
+	    followscan => 0,		 # For use with (quantum)random-modes, chance to do a normal fwd/backwd-scanstep
 	    demodulator_mode => 'WFM',   # Options: AM, FM, WFM, WFM_ST, WFM_ST_OIRT, LSB, USB, CW, CWL, CWU
 	    gqrx_host => '127.0.0.1',
 	    gqrx_port => 7356,
@@ -443,7 +451,7 @@ EOF
 	    max_frequency => 107700,     # Maximum frequency to use in KHz
 	    min_frequency => 87600,      # Minimum frequency to use in KHz
             quiet_mode => 0,         	 # When true, only output errors
-	    scanning_mode => 'quantumrandom1',  # Options: forward, backward, bounce, random, random2, quantumrandom1, quantumrandom2, quantumrandom3
+	    scanning_mode => 'random2',  # Options: forward, backward, bounce, random, random2, quantumrandom1, quantumrandom2, quantumrandom3
 	    scanning_step => 150,        # The size of each step in KHz for linear scanning
 	    sleep_time => 13,            # Number of ms to wait before changing frequency
 	    randsleep => 0,              # Max random number of additional ms to wait before changing frequency
@@ -460,6 +468,8 @@ EOF
 		  "min-frequency|min=f"  => \$options{min_frequency},
 		  "port|P=s"             => \$options{gqrx_port},
 		  "quiet|q"              => \$options{quiet_mode},
+		  "bounce|b"		 => \$options{bounce},
+		  "follow|f"		 => \$options{followscan},
 		  "scanning-mode|m=s"    => \$options{scanning_mode},
 		  "scanning-step|s=f"    => \$options{scanning_step},
 		  "sleep-time|S=f"       => \$options{sleep_time},
