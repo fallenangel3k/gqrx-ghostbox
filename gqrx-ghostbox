@@ -51,6 +51,10 @@ use GQRX::Remote;
 
     use Time::HiRes qw(usleep);
     use Getopt::Long qw(:config no_ignore_case);
+	
+    use LWP::Simple;
+    use Net::Random;
+    use Crypt::Random qw(makerandom_itv); 
 
     use warnings;
     use strict;
@@ -69,20 +73,16 @@ use GQRX::Remote;
 	    ghostmode => undef,  # random additional sleep time from ghost/random
 	    ghostchance => undef, # value above GHOST/random will trigger additional delay
 	    quantumrandom => undef, # true quantum random number
-	    mysquelch => undef, # value for squelch
+	    mysquelch => undef   # value for squelch
 	};
-
 	bless ($self, $class);
-
 	$self->parse_command_line_options();
-
 	return ($self);
     }
 
 
     sub start {
     my ($self) = @_;
-
 	$self->connect_to_gqrx();
 
 	# Setup a random starting frequency within the range
@@ -112,8 +112,8 @@ use GQRX::Remote;
 	usleep($random_number);
         }
 
-	if ($ghost < ($self->{options}->{ghostchance})) {
 	my $ghost = rand() * 100;
+	if ($ghost < ($self->{options}->{ghostchance})) {
 	my $ghrange = $self->{options}->{ghostmode};
 	my $ghrandom_number = int(rand($ghrange));
     	my $ghrnhum = $ghrandom_number / 1000 / 1000;
@@ -135,9 +135,7 @@ use GQRX::Remote;
 
     sub connect_to_gqrx {
 	my ($self) = @_;
-
         $self->{remote} = GQRX::Remote->new();
-
         if (! $self->{remote}->connect(host => $self->{options}->{gqrx_host},
                                        port => $self->{options}->{gqrx_port})) {
             die "ERROR: Failed to establish connection to Gqrx " .
@@ -155,9 +153,7 @@ sub set_frequency
 {
 	my $self = shift;
 	my $new_freq = shift;
-
 	$self->{frequency} = $new_freq;
-
 	if (! $self->{remote}->set_frequency($new_freq)) {
 		die "ERROR: set_frequency() failed: " . $self->{remote}->error() . "\n";
 	}
@@ -202,8 +198,8 @@ sub generate_new_frequency
 #### Marcus & Michael MOD
 sub set_frequency_quantumrandom1
 {
-	use LWP::Simple;
 	my $self = shift;
+        my $options = $self->{options};
 	my $url = "http://random.openqu.org/api/randint?size=1&min=$options->{min_frequency}&max=$options->{max_frequency}";
 	my $content = get($url);  
 	my @mycontent = split /[{["result": }\]]/, $content;  # original response from JSON API was for e.g. --> {"result": [96245783]}
@@ -217,8 +213,8 @@ sub set_frequency_quantumrandom1
 
 sub set_frequency_quantumrandom2
 {
-	use Net::Random;
 	my $self = shift;
+        my $options = $self->{options};
 	my $rand = Net::Random->new( 
 	src => 'qrng.anu.edu.au',   # sources: qrng.anu.edu.au OR random.org
 	#src => 'random.org',   # sources: qrng.anu.edu.au OR random.org
@@ -235,8 +231,8 @@ sub set_frequency_quantumrandom2
 
 sub set_frequency_quantumrandom3
 {
-	use  Net::Random;
 	my $self = shift;
+        my $options = $self->{options};
 	my $rand = Net::Random->new( 
 	#src => 'qrng.anu.edu.au',   # sources: qrng.anu.edu.au OR random.org
 	src => 'random.org',   # sources: qrng.anu.edu.au OR random.org
@@ -253,7 +249,7 @@ sub set_frequency_quantumrandom3
 sub set_frequency_random2
 {
 	my $self = shift;
-	use Crypt::Random qw( makerandom_itv ); 
+        my $options = $self->{options};
 	my $r = makerandom_itv ( Lower => ($options->{min_frequency}), Upper => ($options->{max_frequency}) );
 	#    $self->{frequency} = int(rand($options->{max_frequency} - $options->{min_frequency}) + $options->{min_frequency});
 	#    $self->{frequency} = $r;
@@ -264,18 +260,17 @@ sub set_frequency_random2
 sub set_frequency_random
 {
 	my $self = shift;
-
+        my $options = $self->{options};
 	my $frequency_width = $options->{max_frequency} - $options->{min_frequency};
-	my $random_freq = int(rand($frequency_width)) + $options->{min_frequency});
-
+	my $random_freq = int(rand($frequency_width)) + $options->{min_frequency};
 	$self->set_frequency($random_freq);
 }
 
 sub frequency_step_backward
 {
 	my $self = shift;
-	my ($scanning_step, $min_frequency, $max_frequency, $bounce, $frequency)  = ($options->{scanning_step}, $options->{min_frequency}, $options->{max_frequency}, $options->{bounce}, $self->{frequency});
-
+        my $options = $self->{options};
+	my ($scanning_step, $min_frequency, $max_frequency, $bounce, $frequency)  = ($options->{scanning_step}, $options->{min_frequency}, $options->{max_frequency}, $options->{bounce}, $self->{frequency});  
 	my $new_frequency = $frequency - $scanning_step;
 	if ($new_frequency < $min_frequency) {
 		if ($bounce) {
@@ -286,7 +281,6 @@ sub frequency_step_backward
 			$new_frequency = $new_frequency + $max_frequency - $min_frequency;
 		}
 	}
-
 	$self->set_frequency( $new_frequency );
 }
 
@@ -294,10 +288,9 @@ sub frequency_step_backward
 sub frequency_step_forward
 {
 	my $self = shift;
-	my ($scanning_step, $min_frequency, $max_frequency, $bounce, $frequency)  = ($options->{scanning_step}, $options->{min_frequency}, $options->{max_frequency}, $options->{bounce}, $self->{frequency});
-
+        my $options = $self->{options};
+	my ($scanning_step, $min_frequency, $max_frequency, $bounce, $frequency)  = ($options->{scanning_step}, $options->{min_frequency}, $options->{max_frequency}, $options->{bounce}, $self->{frequency});  
 	my $new_frequency = $frequency + $scanning_step;
-
 	if ($new_frequency > $max_frequency) {
 		if ($bounce) {
 			$options->{scanning_mode} = 'BACKWARD';
@@ -456,7 +449,7 @@ EOF
 	    randsleep => 0,              # Max random number of additional ms to wait before changing frequency
             ghostmode => 0,              # Max random number of additional ms to wait before changing frequency trigged by ghost/random
 	    ghostchance => 0,            # Ghost/random chance to trigger additional time to wait on same frequency
-	    mysquelch => 66		 # Set Squelch to desired level
+	    mysquelch => -66		 # Set Squelch to desired level
 	    );
 
 	if (! GetOptions(
@@ -477,13 +470,10 @@ EOF
 	    )) {
 	    $self->show_usage();
 	}
-
 	$self->{options} = \%options;
-
 	if ($options{help}) {
 	    $self->show_usage();
 	}
-
 	$self->validate_options();
 	$self->setup_options();
     }
@@ -494,7 +484,6 @@ EOF
 
 sub main {
     my $ghostbox = new Ghostbox();
-
     $ghostbox->start();
 }
 
