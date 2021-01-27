@@ -1,5 +1,5 @@
 sudo apt update
-sudo apt install perl gqrx libperl*json* libtest*cpan*
+sudo apt install perl gqrx-sdr libperl*json* libtest*cpan*
 
 sudo cpan App::cpanminus
 
